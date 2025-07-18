@@ -4,7 +4,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="🍽️ Random Restaurant Picker",
-    page_icon="🍠",
+    page_icon="🥡",
     layout="centered"
 )
 
@@ -48,16 +48,16 @@ def get_restaurants(zip_code, cuisine="restaurants", radius_miles=15, min_rating
 
     return filtered if filtered else None
 
-# Streamlit UI
-st.title(":sushi: Random Restaurant Picker")
+# --- Streamlit App UI ---
+st.title("🍣 Random Restaurant Picker")
 st.caption("Powered by Yelp Fusion API")
 
-zip_code = st.text_input("\ud83d\udce7 Enter ZIP code", value="87107")
-cuisine = st.text_input("\ud83c\udf55 Preferred cuisine (e.g. sushi, mexican)", value="restaurants")
-distance = st.slider("\ud83d\udccd Max distance (miles)", 1, 25, 15)
-rating = st.slider("\u2b50 Minimum Yelp rating", 1.0, 5.0, 4.0, step=0.1)
+zip_code = st.text_input("📬 Enter ZIP code", value="87107")
+cuisine = st.text_input("🍕 Preferred cuisine (e.g. sushi, mexican)", value="restaurants")
+distance = st.slider("📍 Max distance (miles)", 1, 25, 15)
+rating = st.slider("⭐ Minimum Yelp rating", 1.0, 5.0, 4.0, step=0.1)
 
-if st.button("\ud83c\udf72 Pick a Place"):
+if st.button("🍲 Pick a Place"):
     result_list = get_restaurants(zip_code, cuisine, distance, rating)
     if result_list:
         result = random.choice(result_list)
@@ -68,13 +68,13 @@ if st.button("\ud83c\udf72 Pick a Place"):
         url = result['url']
         google_url = f"https://www.google.com/maps/search/{name.replace(' ', '+')}+{address.replace(' ', '+')}"
 
-        st.success(f"\ud83c\udf1f {name}")
-        st.write(f"\ud83d\udccd {address}")
-        st.write(f"\ud83d\udcf1 {phone}")
-        st.write(f"\u2b50 Rating: {rating}")
+        st.success(f"🌟 {name}")
+        st.write(f"📍 {address}")
+        st.write(f"📞 {phone}")
+        st.write(f"⭐ Rating: {rating}")
         st.markdown(f"[View on Yelp]({url}) | [Google Maps]({google_url})")
 
-        if st.button("\ud83d\udd04 Pick Again"):
+        if st.button("🔄 Pick Again"):
             st.rerun()
     else:
         st.warning("No matching restaurants found.")
