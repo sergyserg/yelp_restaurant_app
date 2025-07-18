@@ -1,5 +1,24 @@
 import requests
 import random
+import streamlit as st
+
+st.set_page_config(
+    page_title="🍽️ Random Restaurant Picker",
+    page_icon="🍠",
+    layout="centered"
+)
+
+st.markdown("""
+    <style>
+        .stButton>button {
+            background-color: #f63366;
+            color: white;
+            border-radius: 10px;
+            height: 3em;
+            width: 100%;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 API_KEY = "dKXO-AEkZkU9RjENAWLRWyMODGQQdfDtOHq4ZWLTh2oxDfMWGpjTenYDltwgoAUI7S8QpA07mDLGQs-xgXWU1NluJOKFzN6ZTS5R-c6RKLqI2helamG-A5AJffR3aHYx"
 
@@ -19,59 +38,43 @@ def get_restaurants(zip_code, cuisine="restaurants", radius_miles=15, min_rating
     }
 
     response = requests.get(url, headers=headers, params=params)
-
     if response.status_code != 200:
-        print(f"❌ Error: {response.status_code} - {response.text}")
-        return
+        st.error(f"Error: {response.status_code} - {response.text}")
+        return None
 
     data = response.json()
     businesses = data.get("businesses", [])
+    filtered = [b for b in businesses if b.get("rating", 0) >= min_rating and not b.get("is_closed", False)]
 
-    if not businesses:
-        print("😕 No matching restaurants found.")
-        return
+    return filtered if filtered else None
 
-    # Filter by rating
-    filtered = [b for b in businesses if b.get("rating", 0) >= min_rating]
+# Streamlit UI
+st.title(":sushi: Random Restaurant Picker")
+st.caption("Powered by Yelp Fusion API")
 
-    if not filtered:
-        print(f"😕 No restaurants with {min_rating}★ or higher found.")
-        return
+zip_code = st.text_input("\ud83d\udce7 Enter ZIP code", value="87107")
+cuisine = st.text_input("\ud83c\udf55 Preferred cuisine (e.g. sushi, mexican)", value="restaurants")
+distance = st.slider("\ud83d\udccd Max distance (miles)", 1, 25, 15)
+rating = st.slider("\u2b50 Minimum Yelp rating", 1.0, 5.0, 4.0, step=0.1)
 
-    chosen = random.choice(filtered)
-    name = chosen["name"]
-    address = ", ".join(chosen["location"]["display_address"])
-    rating = chosen["rating"]
-    phone = chosen.get("display_phone", "No phone listed")
-    is_closed = chosen.get("is_closed", False)
-    yelp_url = chosen["url"]
+if st.button("\ud83c\udf72 Pick a Place"):
+    result_list = get_restaurants(zip_code, cuisine, distance, rating)
+    if result_list:
+        result = random.choice(result_list)
+        name = result['name']
+        address = ", ".join(result['location']['display_address'])
+        phone = result.get('display_phone', 'No phone')
+        rating = result['rating']
+        url = result['url']
+        google_url = f"https://www.google.com/maps/search/{name.replace(' ', '+')}+{address.replace(' ', '+')}"
 
-    print("\n🍽️  Random Restaurant Pick 🍽️")
-    print(f"📍 {name}")
-    print(f"📌 Address: {address}")
-    print(f"📞 Phone: {phone}")
-    print(f"⭐ Rating: {rating}")
-    print(f"🔗 Yelp: {yelp_url}")
+        st.success(f"\ud83c\udf1f {name}")
+        st.write(f"\ud83d\udccd {address}")
+        st.write(f"\ud83d\udcf1 {phone}")
+        st.write(f"\u2b50 Rating: {rating}")
+        st.markdown(f"[View on Yelp]({url}) | [Google Maps]({google_url})")
 
-    if is_closed:
-        print("⚠️ Yelp reports this place is permanently closed.")
+        if st.button("\ud83d\udd04 Pick Again"):
+            st.rerun()
     else:
-        print("✅ Yelp shows it as currently operating.")
-
-    google_search = f"https://www.google.com/maps/search/{name.replace(' ', '+')}+{address.replace(' ', '+')}"
-    print(f"📍 Google Maps Search: {google_search}")
-
-if __name__ == "__main__":
-    zip_code = input("📫 Enter ZIP code (e.g. 87107): ").strip()
-    cuisine = input("🍕 Enter cuisine (e.g. sushi, mexican, bbq): ").strip().lower()
-    try:
-        distance = float(input("📏 Max distance in miles (max 25): "))
-    except ValueError:
-        distance = 15
-
-    try:
-        min_rating = float(input("⭐ Minimum rating (e.g. 4.0): "))
-    except ValueError:
-        min_rating = 0.0
-
-    get_restaurants(zip_code, cuisine or "restaurants", distance, min_rating)
+        st.warning("No matching restaurants found.")
